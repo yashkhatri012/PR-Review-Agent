@@ -1,23 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Any
-
-from services.llm_provider import LLMProvider
-
-
+from services.llm import LLM
 class BaseAgent(ABC):
-    """Define the common interface and dependencies for review agents.
+    """Define the common interface and dependencies for review agents."""
 
-    Each specialized review agent inherits from this class and implements
-    its own domain-specific review behavior while sharing the same LLM
-    provider interface.
-    """
-
-    def __init__(self, llm: LLMProvider) -> None:
-        """Initialize an agent with an LLM provider.
+    def __init__(self, llm: LLM) -> None:
+        """Initialize an agent with an LLM service.
 
         Args:
-            llm: Provider used by the agent to communicate with the language
-                model.
+            llm: Shared LLM service used to generate model responses.
         """
         self.llm = llm
 

@@ -1,32 +1,27 @@
-from agents.bug import BugAgent
 from agents.diff import DiffAgent
-from agents.quality import QualityAgent
-from agents.security import SecurityAgent
-from orchestration.orchestrator import ReviewOrchestrator
-from services.llm_provider import LLMProvider
+from services.llm import LLM
 
 
 diff = """
-diff --git a/users.py b/users.py
+diff --git a/calculator.py b/calculator.py
 index 1234567..abcdefg 100644
---- a/users.py
-+++ b/users.py
-@@ -10,7 +10,8 @@ def get_user(user_id):
--    return get_user_from_repository(user_id)
-+    query = f"SELECT * FROM users WHERE id = {user_id}"
-+    return db.execute(query)
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,2 @@
+ def calculate_total(items):
+-    return sum(item.price for item in items)
++    return sum(item.price for item in items) / len(items)
 """
 
 
-llm = LLMProvider()
+llm = LLM()
 
-orchestrator = ReviewOrchestrator(
-    diff_agent=DiffAgent(llm),
-    bug_agent=BugAgent(llm),
-    security_agent=SecurityAgent(llm),
-    quality_agent=QualityAgent(llm),
-)
+agent = DiffAgent(llm)
 
-state = orchestrator.run(diff)
+result = agent.review(diff)
 
-print(state.model_dump_json(indent=2))
+print("Current model:")
+print(llm.current_model)
+
+print("\nDiff analysis:")
+print(result.model_dump_json(indent=2))

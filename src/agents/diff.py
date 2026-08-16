@@ -61,7 +61,7 @@ Git diff:
 {diff}
 """
 
-        return self.llm.generate(
+        return self.llm.generate_structured(
             prompt=prompt,
             response_model=DiffAnalysis,
         )

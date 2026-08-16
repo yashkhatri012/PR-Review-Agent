@@ -68,7 +68,7 @@ PR diff:
 {diff}
 """
 
-        return self.llm.generate(
-            prompt=prompt,
-            response_model=ReviewResult,
-        )
+        return self.llm.generate_structured(
+        prompt=prompt,
+        response_model=ReviewResult,
+    )

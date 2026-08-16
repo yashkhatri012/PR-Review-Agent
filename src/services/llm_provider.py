@@ -75,8 +75,18 @@ class LLMProvider:
     def generate_with_tools(
         self,
         contents: list,
-        tools: list[dict],
+        tools: list[types.FunctionDeclaration],
     ):
+        """Generate a response while exposing custom tools to the model.
+
+        Args:
+            contents: Conversation history supplied to the model.
+            tools: Function declarations describing the tools available to
+                the model.
+
+        Returns:
+            The Gemini response containing either text, function calls, or both.
+        """
         tool = types.Tool(
             function_declarations=tools,
         )
@@ -84,7 +94,7 @@ class LLMProvider:
         config = types.GenerateContentConfig(
             tools=[tool],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                disable=True
+                disable=True,
             ),
         )
 
@@ -96,26 +106,30 @@ class LLMProvider:
     def continue_with_tool_result(
         self,
         contents: list,
-        tool_name: str,
+        tool_call,
         tool_result: object,
     ):
         """Continue an LLM interaction after executing a requested tool.
 
         Args:
             contents: Conversation history containing the original request and
-            the model's previous response.
-            tool_name: Name of the tool that was executed.
+                previous model responses.
+            tool_call: Gemini function call that was executed by the application.
             tool_result: Result returned by the executed tool.
+
+        Returns:
+            The model's next response after receiving the tool result.
         """
-        tool_response = types.Part.from_function_response(
-            name=tool_name,
+        function_response = types.Part.from_function_response(
+            name=tool_call.name,
             response={"result": tool_result},
+            id=tool_call.id,
         )
 
         contents.append(
             types.Content(
-                role="tool",
-                parts=[tool_response],
+                role="user",
+                parts=[function_response],
             )
         )
 

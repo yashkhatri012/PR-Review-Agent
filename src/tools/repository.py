@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from google.genai import types
 
 class RepositoryTool:
     def __init__(self, repository_root: str) -> None:
@@ -30,32 +30,15 @@ class RepositoryTool:
         return requested_path.read_text(encoding="utf-8")
 
 
-    def get_tool_definition(self) -> dict:
-        """Return the function declaration exposed to the LLM.
+    def get_tool_definition(self) -> types.FunctionDeclaration:
+        """Return the Gemini function declaration for the file-reading tool.
 
         Returns:
-        A dictionary describing the read_file tool, including its name,
-        purpose, accepted arguments, and required parameters.
+            A Gemini function declaration describing the read_file operation
+            and its accepted arguments.
         """
-        return {
-            "name": "read_file",
-            "description": (
-                "Read a source code file from the repository. "
-                "Use this when you need additional context that is not "
-                "included in the PR diff."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {
-                        "type": "string",
-                        "description": (
-                            "Path to the file relative to the repository root."
-                        ),
-                    }
-                },
-                "required": ["file_path"],
-            },
-        }
-
+        return types.FunctionDeclaration.from_callable_with_api_option(
+            callable=self.read_file,
+            api_option="GEMINI_API",
+        )
 
