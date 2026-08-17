@@ -31,12 +31,10 @@ class BugAgent(BaseAgent):
         """
         return "bug_agent"
 
-    def review(
+    async def review(
         self,
         diff: str,
         diff_analysis: DiffAnalysis,
-        # Why pass both diff and diff_analysis? The diff is the raw code changes, while diff_analysis is a structured summary of those changes. 
-        # The agent uses both to identify potential bugs.
     ) -> ReviewResult:
         """Analyze a pull request for bugs and behavioral regressions.
 
@@ -47,6 +45,20 @@ class BugAgent(BaseAgent):
         Returns:
             A structured collection of bug findings.
         """
+        repository_context = []
+
+        for file_path in diff_analysis.changed_files:
+            content = await self.repository.get_file(file_path)
+
+            repository_context.append(
+                f"""
+--- {file_path} ---
+{content}
+"""
+            )
+
+        repository_context_text = "\n".join(repository_context)
+
         prompt = f"""
 You are the Bug Review Agent in a multi-agent code review system.
 
@@ -72,11 +84,15 @@ You have the following analysis from the Diff Agent:
 
 {diff_analysis.model_dump_json(indent=2)}
 
-Use this analysis to understand what changed, but inspect the actual diff
-carefully before reporting a finding.
+You also have the contents of the changed repository files:
 
-Only report issues that are reasonably supported by the supplied code.
-Do not invent behavior or assumptions.
+{repository_context_text}
+
+Use the repository contents together with the PR diff to understand the
+actual implementation surrounding the changes.
+
+Only report issues that are reasonably supported by the code.
+Do not invent application behavior or assumptions.
 
 If there are no clear bugs, return an empty findings list.
 
@@ -86,6 +102,6 @@ PR diff:
 """
 
         return self.llm.generate_structured(
-        prompt=prompt,
-        response_model=ReviewResult,
-    )
+            prompt=prompt,
+            response_model=ReviewResult,
+        )

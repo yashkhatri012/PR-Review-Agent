@@ -28,7 +28,7 @@ class ReviewOrchestrator:
         self.security_agent = security_agent
         self.quality_agent = quality_agent
 
-    def run(self, diff: str) -> ReviewState:
+    async def run(self, diff: str) -> ReviewState:
         """Execute the PR review workflow.
 
         Args:
@@ -42,17 +42,17 @@ class ReviewOrchestrator:
 
         state.diff_analysis = self.diff_agent.review(diff)
 
-        bug_result = self.bug_agent.review(
+        bug_result = await self.bug_agent.review(
             diff=diff,
             diff_analysis=state.diff_analysis,
         )
 
-        security_result = self.security_agent.review(
+        security_result = await self.security_agent.review(
             diff=diff,
             diff_analysis=state.diff_analysis,
         )
 
-        quality_result = self.quality_agent.review(
+        quality_result = await self.quality_agent.review(
             diff=diff,
             diff_analysis=state.diff_analysis,
         )

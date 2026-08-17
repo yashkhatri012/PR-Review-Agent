@@ -1,19 +1,21 @@
 from agents.base import BaseAgent
 from models.review import DiffAnalysis, ReviewResult
-from services.repository_context import RepositoryContext
 from services.llm import LLM
+from services.repository_context import RepositoryContext
+
 
 class QualityAgent(BaseAgent):
     """Identify maintainability and code-quality issues in a pull request."""
+
     def __init__(
         self,
         llm: LLM,
         repository: RepositoryContext,
     ) -> None:
-        """Initialize the security review agent.
+        """Initialize the quality review agent.
 
         Args:
-            llm: Shared LLM service used for Quality analysis.
+            llm: Shared LLM service used for quality analysis.
             repository: Shared repository context used to retrieve
                 repository files and related code.
         """
@@ -29,7 +31,7 @@ class QualityAgent(BaseAgent):
         """
         return "quality_agent"
 
-    def review(
+    async def review(
         self,
         diff: str,
         diff_analysis: DiffAnalysis,
@@ -43,6 +45,20 @@ class QualityAgent(BaseAgent):
         Returns:
             A structured collection of quality findings.
         """
+        repository_context = []
+
+        for file_path in diff_analysis.changed_files:
+            content = await self.repository.get_file(file_path)
+
+            repository_context.append(
+                f"""
+--- {file_path} ---
+{content}
+"""
+            )
+
+        repository_context_text = "\n".join(repository_context)
+
         prompt = f"""
 You are the Quality Review Agent in a multi-agent code review system.
 
@@ -72,8 +88,12 @@ You have the following analysis from the Diff Agent:
 
 {diff_analysis.model_dump_json(indent=2)}
 
-Use the analysis to understand the scope of the change, but base every
-finding on evidence from the supplied diff.
+You also have the contents of the changed repository files:
+
+{repository_context_text}
+
+Use the repository contents together with the PR diff to understand the
+actual implementation surrounding the changes.
 
 Only report meaningful issues that are reasonably supported by the code.
 Do not invent application behavior.
@@ -86,6 +106,6 @@ PR diff:
 """
 
         return self.llm.generate_structured(
-        prompt=prompt,
-        response_model=ReviewResult,
-    )
+            prompt=prompt,
+            response_model=ReviewResult,
+        )

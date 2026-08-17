@@ -1,7 +1,9 @@
 from agents.base import BaseAgent
 from models.review import DiffAnalysis, ReviewResult
-from services.repository_context import RepositoryContext
 from services.llm import LLM
+from services.repository_context import RepositoryContext
+
+
 class SecurityAgent(BaseAgent):
     """Identify security vulnerabilities introduced by a pull request."""
 
@@ -29,7 +31,7 @@ class SecurityAgent(BaseAgent):
         """
         return "security_agent"
 
-    def review(
+    async def review(
         self,
         diff: str,
         diff_analysis: DiffAnalysis,
@@ -43,6 +45,20 @@ class SecurityAgent(BaseAgent):
         Returns:
             A structured collection of security findings.
         """
+        repository_context = []
+
+        for file_path in diff_analysis.changed_files:
+            content = await self.repository.get_file(file_path)
+
+            repository_context.append(
+                f"""
+--- {file_path} ---
+{content}
+"""
+            )
+
+        repository_context_text = "\n".join(repository_context)
+
         prompt = f"""
 You are the Security Review Agent in a multi-agent code review system.
 
@@ -75,8 +91,12 @@ You have the following analysis from the Diff Agent:
 
 {diff_analysis.model_dump_json(indent=2)}
 
-Use the analysis to understand the scope of the change, but base every
-finding on evidence from the supplied diff.
+You also have the contents of the changed repository files:
+
+{repository_context_text}
+
+Use the repository contents together with the PR diff to understand the
+actual implementation surrounding the changes.
 
 Only report vulnerabilities that are reasonably supported by the code.
 Do not invent application behavior that is not shown.
@@ -89,6 +109,6 @@ PR diff:
 """
 
         return self.llm.generate_structured(
-        prompt=prompt,
-        response_model=ReviewResult,
-    )
+            prompt=prompt,
+            response_model=ReviewResult,
+        )
