@@ -1,9 +1,24 @@
 from agents.base import BaseAgent
 from models.review import DiffAnalysis, ReviewResult
-
+from services.repository_context import RepositoryContext
+from services.llm import LLM
 
 class QualityAgent(BaseAgent):
     """Identify maintainability and code-quality issues in a pull request."""
+    def __init__(
+        self,
+        llm: LLM,
+        repository: RepositoryContext,
+    ) -> None:
+        """Initialize the security review agent.
+
+        Args:
+            llm: Shared LLM service used for Quality analysis.
+            repository: Shared repository context used to retrieve
+                repository files and related code.
+        """
+        super().__init__(llm)
+        self.repository = repository
 
     @property
     def name(self) -> str:

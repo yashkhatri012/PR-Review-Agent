@@ -1,9 +1,24 @@
 from agents.base import BaseAgent
 from models.review import DiffAnalysis, ReviewResult
-
-
+from services.repository_context import RepositoryContext
+from services.llm import LLM
 class SecurityAgent(BaseAgent):
     """Identify security vulnerabilities introduced by a pull request."""
+
+    def __init__(
+        self,
+        llm: LLM,
+        repository: RepositoryContext,
+    ) -> None:
+        """Initialize the security review agent.
+
+        Args:
+            llm: Shared LLM service used for security analysis.
+            repository: Shared repository context used to retrieve
+                repository files and related code.
+        """
+        super().__init__(llm)
+        self.repository = repository
 
     @property
     def name(self) -> str:

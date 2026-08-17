@@ -2,3 +2,4 @@ pydantic
 google-genai
 python-dotenv
 groq
+mcp>=1.28,<2
